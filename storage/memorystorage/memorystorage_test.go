@@ -1,0 +1,24 @@
+package memorystorage_test
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/go-tk/versionedkv"
+	. "github.com/go-tk/versionedkv/storage/memorystorage"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestMemoryStorage(t *testing.T) {
+	versionedkv.DoTestStorage(t, New)
+}
+
+func TestMemoryStorage_Close(t *testing.T) {
+	s := New()
+	time.AfterFunc(100*time.Millisecond, func() {
+		s.Close() // WaitForValue should fail with error ErrStorageClosed
+	})
+	_, _, err := s.WaitForValue(context.Background(), "foo", nil)
+	assert.Equal(t, err, versionedkv.ErrStorageClosed)
+}
