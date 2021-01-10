@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 
 	"github.com/go-tk/versionedkv"
-	"github.com/go-tk/versionedkv/storage/memorystorage/internal"
+	"github.com/go-tk/versionedkv/memorystorage/internal"
 )
 
 // New creates a new memory storage.

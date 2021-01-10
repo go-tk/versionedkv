@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-tk/versionedkv"
-	. "github.com/go-tk/versionedkv/storage/memorystorage"
+	. "github.com/go-tk/versionedkv/memorystorage"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	. "github.com/go-tk/versionedkv/storage/memorystorage/internal"
+	. "github.com/go-tk/versionedkv/memorystorage/internal"
 	"github.com/stretchr/testify/assert"
 )
 
