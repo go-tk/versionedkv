@@ -122,24 +122,6 @@ func (v *Value) Clear(version Version, remover ValueRemover) (bool, error) {
 	return true, nil
 }
 
-type ValueDetails struct {
-	V                string
-	Version          Version
-	NumberOfWatchers int
-	IsRemoved        bool
-}
-
-func (v *Value) Inspect() ValueDetails {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	return ValueDetails{
-		V:                v.v,
-		Version:          v.version,
-		NumberOfWatchers: len(v.watchers),
-		IsRemoved:        v.isRemoved,
-	}
-}
-
 func (v *Value) remove(remover ValueRemover) {
 	remover()
 	v.isRemoved = true
