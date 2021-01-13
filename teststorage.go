@@ -1263,7 +1263,7 @@ func doTestStorageRaceCondition(t *testing.T, sf StorageFactory) {
 			switch actions[rand.Intn(len(actions))] {
 			case actionGetValue:
 				if prevVersion != nil {
-					panic("unreachable code")
+					panic("unreachable")
 				}
 				var err error
 				value, version, err = s.GetValue(context.Background(), key)
@@ -1318,7 +1318,7 @@ func doTestStorageRaceCondition(t *testing.T, sf StorageFactory) {
 				}
 			case actionCreateValue:
 				if prevVersion != nil {
-					panic("unreachable code")
+					panic("unreachable")
 				}
 				var err error
 				version, err = s.CreateValue(context.Background(), key, value)
@@ -1340,7 +1340,7 @@ func doTestStorageRaceCondition(t *testing.T, sf StorageFactory) {
 				}
 			case actionUpdateValue:
 				if prevVersion == nil {
-					panic("unreachable code")
+					panic("unreachable")
 				}
 				var err error
 				version, err = s.UpdateValue(context.Background(), key, value, prevVersion)
@@ -1363,7 +1363,7 @@ func doTestStorageRaceCondition(t *testing.T, sf StorageFactory) {
 				}
 			case actionCreateOrUpdateValue:
 				if prevVersion == nil {
-					panic("unreachable code")
+					panic("unreachable")
 				}
 				var err error
 				version, err = s.CreateOrUpdateValue(context.Background(), key, value, prevVersion)

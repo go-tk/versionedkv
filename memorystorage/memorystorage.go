@@ -25,49 +25,46 @@ type memoryStorage struct {
 
 func (ms *memoryStorage) GetValue(_ context.Context, key string) (string, versionedkv.Version, error) {
 	for {
-		val, version, err, done := ms.tryGetValue(key)
-		if !done {
+		val, version, err := ms.doGetValue(key)
+		if err == internal.ErrValueRemoved {
 			continue
 		}
 		return val, version2OpaqueVersion(version), err
 	}
 }
 
-func (ms *memoryStorage) tryGetValue(key string) (string, internal.Version, error, bool) {
+func (ms *memoryStorage) doGetValue(key string) (string, internal.Version, error) {
 	if ms.isClosed() {
-		return "", 0, versionedkv.ErrStorageClosed, true
+		return "", 0, versionedkv.ErrStorageClosed
 	}
 	opaqueValue, ok := ms.values.Load(key)
 	if !ok {
-		return "", 0, nil, true
+		return "", 0, nil
 	}
 	value := opaqueValue.(*internal.Value)
 	val, version, err := value.Get()
 	if err != nil {
-		if err != internal.ErrValueRemoved {
-			panic("unreachable")
-		}
-		return "", 0, nil, false
+		return "", 0, err
 	}
-	return val, version, nil, true
+	return val, version, nil
 }
 
 func (ms *memoryStorage) WaitForValue(ctx context.Context, key string,
 	opaqueOldVersion versionedkv.Version) (string, versionedkv.Version, error) {
 	oldVersion := opaqueVersion2Version(opaqueOldVersion)
 	for {
-		val, newVersion, err, done := ms.tryWaitForValue(ctx, key, oldVersion)
-		if !done {
+		val, newVersion, err := ms.doWaitForValue(ctx, key, oldVersion)
+		if err == internal.ErrValueRemoved {
 			continue
 		}
 		return val, version2OpaqueVersion(newVersion), err
 	}
 }
 
-func (ms *memoryStorage) tryWaitForValue(ctx context.Context, key string,
-	oldVersion internal.Version) (string, internal.Version, error, bool) {
+func (ms *memoryStorage) doWaitForValue(ctx context.Context, key string,
+	oldVersion internal.Version) (string, internal.Version, error) {
 	if ms.isClosed() {
-		return "", 0, versionedkv.ErrStorageClosed, true
+		return "", 0, versionedkv.ErrStorageClosed
 	}
 	opaqueValue, ok := ms.values.Load(key)
 	if !ok {
@@ -76,17 +73,11 @@ func (ms *memoryStorage) tryWaitForValue(ctx context.Context, key string,
 	value := opaqueValue.(*internal.Value)
 	watcher, err := value.AddWatcher()
 	if err != nil {
-		if err != internal.ErrValueRemoved {
-			panic("unreachable")
-		}
-		return "", 0, nil, false
+		return "", 0, err
 	}
 	val, version, err := value.Get()
 	if err != nil {
-		if err != internal.ErrValueRemoved {
-			panic("unreachable")
-		}
-		return "", 0, nil, false
+		return "", 0, err
 	}
 	defer func() {
 		if watcher != (internal.Watcher{}) {
@@ -94,40 +85,40 @@ func (ms *memoryStorage) tryWaitForValue(ctx context.Context, key string,
 		}
 	}()
 	if version != 0 && (oldVersion == 0 || version != oldVersion) {
-		return val, version, nil, true
+		return val, version, nil
 	}
 	select {
 	case <-watcher.Event():
 		eventArgs := watcher.EventArgs()
 		watcher = internal.Watcher{}
-		return eventArgs.Value, eventArgs.Version, nil, true
+		return eventArgs.Value, eventArgs.Version, nil
 	case <-ms.closure:
 		watcher = internal.Watcher{}
-		return "", 0, versionedkv.ErrStorageClosed, true
+		return "", 0, versionedkv.ErrStorageClosed
 	case <-ctx.Done():
-		return "", 0, ctx.Err(), true
+		return "", 0, ctx.Err()
 	}
 }
 
 func (ms *memoryStorage) CreateValue(_ context.Context, key, val string) (versionedkv.Version, error) {
 	for {
-		version, err, ok := ms.tryCreateValue(key, val)
-		if !ok {
+		version, err := ms.doCreateValue(key, val)
+		if err == internal.ErrValueRemoved {
 			continue
 		}
 		return version2OpaqueVersion(version), err
 	}
 }
 
-func (ms *memoryStorage) tryCreateValue(key, val string) (internal.Version, error, bool) {
+func (ms *memoryStorage) doCreateValue(key, val string) (internal.Version, error) {
 	if ms.isClosed() {
-		return 0, versionedkv.ErrStorageClosed, true
+		return 0, versionedkv.ErrStorageClosed
 	}
 	version := ms.nextVersion()
 	value := internal.NewValue(val, version)
 	opaqueValue, valueExists := ms.values.LoadOrStore(key, value)
 	if !valueExists {
-		return version, nil, true
+		return version, nil
 	}
 	value = opaqueValue.(*internal.Value)
 	ok, err := value.CheckAndSet(func(currentVersion internal.Version) (string, internal.Version, bool) {
@@ -137,36 +128,33 @@ func (ms *memoryStorage) tryCreateValue(key, val string) (internal.Version, erro
 		return val, version, true
 	})
 	if err != nil {
-		if err != internal.ErrValueRemoved {
-			panic("unreachable")
-		}
-		return 0, nil, false
+		return 0, err
 	}
 	if !ok {
-		return 0, nil, true
+		return 0, nil
 	}
-	return version, nil, true
+	return version, nil
 }
 
 func (ms *memoryStorage) UpdateValue(_ context.Context, key, val string,
 	opaqueOldVersion versionedkv.Version) (versionedkv.Version, error) {
 	oldVersion := opaqueVersion2Version(opaqueOldVersion)
 	for {
-		newVersion, err, done := ms.tryUpdateValue(key, val, oldVersion)
-		if !done {
+		newVersion, err := ms.doUpdateValue(key, val, oldVersion)
+		if err == internal.ErrValueRemoved {
 			continue
 		}
 		return version2OpaqueVersion(newVersion), err
 	}
 }
 
-func (ms *memoryStorage) tryUpdateValue(key, val string, oldVersion internal.Version) (internal.Version, error, bool) {
+func (ms *memoryStorage) doUpdateValue(key, val string, oldVersion internal.Version) (internal.Version, error) {
 	if ms.isClosed() {
-		return 0, versionedkv.ErrStorageClosed, true
+		return 0, versionedkv.ErrStorageClosed
 	}
 	opaqueValue, ok := ms.values.Load(key)
 	if !ok {
-		return 0, nil, true
+		return 0, nil
 	}
 	value := opaqueValue.(*internal.Value)
 	var newVersion internal.Version
@@ -181,38 +169,35 @@ func (ms *memoryStorage) tryUpdateValue(key, val string, oldVersion internal.Ver
 		return val, newVersion, true
 	})
 	if err != nil {
-		if err != internal.ErrValueRemoved {
-			panic("unreachable")
-		}
-		return 0, nil, false
+		return 0, err
 	}
 	if !ok {
-		return 0, nil, true
+		return 0, nil
 	}
-	return newVersion, nil, true
+	return newVersion, nil
 }
 
 func (ms *memoryStorage) CreateOrUpdateValue(_ context.Context, key, val string,
 	opaqueOldVersion versionedkv.Version) (versionedkv.Version, error) {
 	oldVersion := opaqueVersion2Version(opaqueOldVersion)
 	for {
-		newVersion, err, done := ms.tryCreateOrUpdateValue(key, val, oldVersion)
-		if !done {
+		newVersion, err := ms.doCreateOrUpdateValue(key, val, oldVersion)
+		if err == internal.ErrValueRemoved {
 			continue
 		}
 		return version2OpaqueVersion(newVersion), err
 	}
 }
 
-func (ms *memoryStorage) tryCreateOrUpdateValue(key, val string, oldVersion internal.Version) (internal.Version, error, bool) {
+func (ms *memoryStorage) doCreateOrUpdateValue(key, val string, oldVersion internal.Version) (internal.Version, error) {
 	if ms.isClosed() {
-		return 0, versionedkv.ErrStorageClosed, true
+		return 0, versionedkv.ErrStorageClosed
 	}
 	version := ms.nextVersion()
 	value := internal.NewValue(val, version)
 	opaqueValue, valueExists := ms.values.LoadOrStore(key, value)
 	if !valueExists {
-		return version, nil, true
+		return version, nil
 	}
 	value = opaqueValue.(*internal.Value)
 	var newVersion internal.Version
@@ -227,48 +212,42 @@ func (ms *memoryStorage) tryCreateOrUpdateValue(key, val string, oldVersion inte
 		return val, newVersion, true
 	})
 	if err != nil {
-		if err != internal.ErrValueRemoved {
-			panic("unreachable")
-		}
-		return 0, nil, false
+		return 0, err
 	}
 	if !ok {
-		return 0, nil, true
+		return 0, nil
 	}
 	if newVersion == 0 {
-		return version, nil, true
+		return version, nil
 	}
-	return newVersion, nil, true
+	return newVersion, nil
 }
 
 func (ms *memoryStorage) DeleteValue(_ context.Context, key string, opaqueVersion versionedkv.Version) (bool, error) {
 	oldVersion := opaqueVersion2Version(opaqueVersion)
 	for {
-		ok, err, done := ms.tryDeleteValue(key, oldVersion)
-		if !done {
+		ok, err := ms.doDeleteValue(key, oldVersion)
+		if err == internal.ErrValueRemoved {
 			continue
 		}
 		return ok, err
 	}
 }
 
-func (ms *memoryStorage) tryDeleteValue(key string, version internal.Version) (bool, error, bool) {
+func (ms *memoryStorage) doDeleteValue(key string, version internal.Version) (bool, error) {
 	if ms.isClosed() {
-		return false, versionedkv.ErrStorageClosed, true
+		return false, versionedkv.ErrStorageClosed
 	}
 	opaqueValue, ok := ms.values.Load(key)
 	if !ok {
-		return false, nil, true
+		return false, nil
 	}
 	value := opaqueValue.(*internal.Value)
 	ok, err := value.Clear(version, func() { ms.values.Delete(key) })
 	if err != nil {
-		if err != internal.ErrValueRemoved {
-			panic("unreachable")
-		}
-		return false, nil, false
+		return false, err
 	}
-	return ok, nil, true
+	return ok, nil
 }
 
 func (ms *memoryStorage) Close() error {
