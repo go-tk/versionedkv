@@ -59,7 +59,7 @@ type Storage interface {
 	// Close releases resources associated.
 	Close() (err error)
 
-	// Inspect returns detailed information.
+	// Inspect returns detailed information for testing and debugging purposes.
 	Inspect() StorageDetails
 }
 
