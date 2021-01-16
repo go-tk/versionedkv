@@ -1,9 +1,9 @@
 package internal_test
 
 import (
-	"strconv"
 	"testing"
 
+	"github.com/go-tk/testcase"
 	. "github.com/go-tk/versionedkv/memorystorage/internal"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,79 +15,47 @@ func TestValue_Get(t *testing.T) {
 		Err     error
 	}
 	type State = ValueDetails
-	type TestCase struct {
-		Given, When, Then string
-		Setup, Teardown   func(*TestCase)
-		Output            Output
-		State             State
+	type Context struct {
+		V Value
 
-		t *testing.T
-		v *Value
+		ExpectedOutput Output
+		ExpectedState  State
 	}
-	testCases := []TestCase{
-		{
-			Given: "value removed",
-			Then:  "should fail with error ErrValueRemoved",
-			Setup: func(tc *TestCase) {
-				tc.v.Remove()
-			},
-			Output: Output{
-				Err: ErrValueRemoved,
-			},
-			State: State{
-				IsRemoved: true,
-			},
-		},
-		{
-			Given: "value not set",
-			Then:  "should return zero value and version",
-		},
-		{
-			Given: "value set",
-			Then:  "should return corresponding value and version",
-			Setup: func(tc *TestCase) {
-				tc.v.Set("foo", 1)
-			},
-			Output: Output{
-				V:       "foo",
-				Version: 1,
-			},
-			State: State{
-				V:       "foo",
-				Version: 1,
-			},
-		},
-	}
-	for i := range testCases {
-		tc := testCases[i]
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			t.Parallel()
-			t.Logf("\nGIVEN: %s\nWHEN: %s\nTHEN: %s", tc.Given, tc.When, tc.Then)
-			tc.t = t
-
-			var v Value
-			tc.v = &v
-
-			if f := tc.Setup; f != nil {
-				f(&tc)
-			}
-
-			vv, version, err := v.Get()
-
-			var output Output
-			output.V = vv
-			output.Version = version
-			output.Err = err
-			assert.Equal(t, tc.Output, output)
-
-			if f := tc.Teardown; f != nil {
-				f(&tc)
-			}
-
-			state := v.Inspect()
-			assert.Equal(t, tc.State, state)
-		})
-	}
+	tc := testcase.New(func(t *testing.T) *Context {
+		return &Context{}
+	}).Run(func(t *testing.T, c *Context) {
+		v, version, err := c.V.Get()
+		var output Output
+		output.V = v
+		output.Version = version
+		output.Err = err
+		assert.Equal(t, c.ExpectedOutput, output)
+		state := c.V.Inspect()
+		assert.Equal(t, c.ExpectedState, state)
+	})
+	testcase.RunListParallel(t, []testcase.TestCase{
+		tc.Copy().
+			Given("value removed").
+			Then("should fail with error ErrValueRemoved").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Remove()
+				c.ExpectedOutput.Err = ErrValueRemoved
+				c.ExpectedState.IsRemoved = true
+			}),
+		tc.Copy().
+			Given("value not set").
+			Then("should return zero value and version"),
+		tc.Copy().
+			Given("value set").
+			Then("should return corresponding value and version").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Set("foo", 1)
+				c.ExpectedOutput.V = "foo"
+				c.ExpectedOutput.Version = 1
+				c.ExpectedState.V = "foo"
+				c.ExpectedState.Version = 1
+			}),
+	})
 }
 
 func TestValue_AddWatcher(t *testing.T) {
@@ -95,64 +63,37 @@ func TestValue_AddWatcher(t *testing.T) {
 		Err error
 	}
 	type State = ValueDetails
-	type TestCase struct {
-		Given, When, Then string
-		Setup, Teardown   func(*TestCase)
-		Output            Output
-		State             State
+	type Context struct {
+		V Value
 
-		t *testing.T
-		v *Value
+		ExpectedOutput Output
+		ExpectedState  State
 	}
-	testCases := []TestCase{
-		{
-			Given: "value removed",
-			Then:  "should fail with error ErrValueRemoved",
-			Setup: func(tc *TestCase) {
-				tc.v.Remove()
-			},
-			Output: Output{
-				Err: ErrValueRemoved,
-			},
-			State: State{
-				IsRemoved: true,
-			},
-		},
-		{
-			Then: "should succeed",
-			State: State{
-				NumberOfWatchers: 1,
-			},
-		},
-	}
-	for i := range testCases {
-		tc := testCases[i]
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			t.Parallel()
-			t.Logf("\nGIVEN: %s\nWHEN: %s\nTHEN: %s", tc.Given, tc.When, tc.Then)
-			tc.t = t
-
-			var v Value
-			tc.v = &v
-
-			if f := tc.Setup; f != nil {
-				f(&tc)
-			}
-
-			_, err := v.AddWatcher()
-
-			var output Output
-			output.Err = err
-			assert.Equal(t, tc.Output, output)
-
-			if f := tc.Teardown; f != nil {
-				f(&tc)
-			}
-
-			state := v.Inspect()
-			assert.Equal(t, tc.State, state)
-		})
-	}
+	tc := testcase.New(func(t *testing.T) *Context {
+		return &Context{}
+	}).Run(func(t *testing.T, c *Context) {
+		_, err := c.V.AddWatcher()
+		var output Output
+		output.Err = err
+		assert.Equal(t, c.ExpectedOutput, output)
+		state := c.V.Inspect()
+		assert.Equal(t, c.ExpectedState, state)
+	})
+	testcase.RunListParallel(t, []testcase.TestCase{
+		tc.Copy().
+			Given("value removed").
+			Then("should fail with error ErrValueRemoved").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Remove()
+				c.ExpectedOutput.Err = ErrValueRemoved
+				c.ExpectedState.IsRemoved = true
+			}),
+		tc.Copy().
+			Then("should succeed").
+			PreRun(func(t *testing.T, c *Context) {
+				c.ExpectedState.NumberOfWatchers = 1
+			}),
+	})
 }
 
 func TestValue_RemoveWatcher(t *testing.T) {
@@ -164,145 +105,108 @@ func TestValue_RemoveWatcher(t *testing.T) {
 		Err error
 	}
 	type State = ValueDetails
-	type TestCase struct {
-		Given, When, Then string
-		Setup, Teardown   func(*TestCase)
-		Input             Input
-		Output            Output
-		State             State
+	type Context struct {
+		V Value
 
-		t *testing.T
-		v *Value
+		Input          Input
+		ExpectedOutput Output
+		ExpectedState  State
 	}
-	testCases := []TestCase{
-		{
-			Given: "value removed",
-			Then:  "should fail with error ErrValueRemoved",
-			Setup: func(tc *TestCase) {
-				tc.v.Remove()
+	tc := testcase.New(func(t *testing.T) *Context {
+		return &Context{
+			Input: Input{
+				Remover: func() {},
 			},
-			Output: Output{
-				Err: ErrValueRemoved,
-			},
-			State: State{
-				IsRemoved: true,
-			},
-		},
-		{
-			Then: "should succeed",
-		},
-		{
-			Given: "value set and watcher already removed",
-			Then:  "should succeed",
-			Setup: func(tc *TestCase) {
-				tc.v.Set("abc", 100)
-				w, err := tc.v.AddWatcher()
-				if !assert.NoError(tc.t, err) {
-					tc.t.FailNow()
+		}
+	}).Run(func(t *testing.T, c *Context) {
+		err := c.V.RemoveWatcher(c.Input.Watcher, c.Input.Remover)
+		var output Output
+		output.Err = err
+		assert.Equal(t, c.ExpectedOutput, output)
+		state := c.V.Inspect()
+		assert.Equal(t, c.ExpectedState, state)
+	})
+	testcase.RunListParallel(t, []testcase.TestCase{
+		tc.Copy().
+			Given("value removed").
+			Then("should fail with error ErrValueRemoved").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Remove()
+				c.ExpectedOutput.Err = ErrValueRemoved
+				c.ExpectedState.IsRemoved = true
+			}),
+		tc.Copy().
+			Given("value set and watcher already removed").
+			Then("should succeed").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Set("abc", 100)
+				w, err := c.V.AddWatcher()
+				if !assert.NoError(t, err) {
+					t.FailNow()
 				}
-				tc.v.RemoveWatcher(w, nil)
-				tc.Input.Watcher = w
-			},
-			State: State{
-				V:       "abc",
-				Version: 100,
-			},
-		},
-		{
-			Given: "value not set and watcher added",
-			Then:  "should succeed and remove value",
-			Setup: func(tc *TestCase) {
-				w, err := tc.v.AddWatcher()
-				if !assert.NoError(tc.t, err) {
-					tc.t.FailNow()
+				c.V.RemoveWatcher(w, nil)
+				c.Input.Watcher = w
+				c.ExpectedState.V = "abc"
+				c.ExpectedState.Version = 100
+			}),
+		tc.Copy().
+			Given("value not set and watcher added").
+			Then("should succeed and remove value").
+			PreRun(func(t *testing.T, c *Context) {
+				w, err := c.V.AddWatcher()
+				if !assert.NoError(t, err) {
+					t.FailNow()
 				}
-				tc.Input.Watcher = w
-				tc.Input.Remover = func() {
-					tc.Input.Remover = nil
+				c.Input.Watcher = w
+				c.Input.Remover = func() {
+					c.Input.Remover = nil
 				}
-			},
-			Teardown: func(tc *TestCase) {
-				assert.Nil(tc.t, tc.Input.Remover)
-			},
-			State: State{
-				IsRemoved: true,
-			},
-		},
-		{
-			Given: "value not set and multiple watchers added",
-			Then:  "should succeed and do not remove value",
-			Setup: func(tc *TestCase) {
-				_, err := tc.v.AddWatcher()
-				if !assert.NoError(tc.t, err) {
-					tc.t.FailNow()
+				c.ExpectedState.IsRemoved = true
+			}).
+			PostRun(func(t *testing.T, c *Context) {
+				assert.Nil(t, c.Input.Remover)
+			}),
+		tc.Copy().
+			Given("value not set and multiple watchers added").
+			Then("should succeed and do not remove value").
+			PreRun(func(t *testing.T, c *Context) {
+				_, err := c.V.AddWatcher()
+				if !assert.NoError(t, err) {
+					t.FailNow()
 				}
-				w, err := tc.v.AddWatcher()
-				if !assert.NoError(tc.t, err) {
-					tc.t.FailNow()
+				w, err := c.V.AddWatcher()
+				if !assert.NoError(t, err) {
+					t.FailNow()
 				}
-				tc.Input.Watcher = w
-				tc.Input.Remover = func() {
-					tc.Input.Remover = nil
+				c.Input.Watcher = w
+				c.Input.Remover = func() {
+					c.Input.Remover = nil
 				}
-			},
-			Teardown: func(tc *TestCase) {
-				assert.NotNil(tc.t, tc.Input.Remover)
-			},
-			State: State{
-				NumberOfWatchers: 1,
-			},
-		},
-		{
-			Given: "value set and watcher added",
-			Then:  "should succeed but do not remove value",
-			Setup: func(tc *TestCase) {
-				tc.v.Set("bar", 88)
-				w, err := tc.v.AddWatcher()
-				if !assert.NoError(tc.t, err) {
-					tc.t.FailNow()
+				c.ExpectedState.NumberOfWatchers = 1
+			}).
+			PostRun(func(t *testing.T, c *Context) {
+				assert.NotNil(t, c.Input.Remover)
+			}),
+		tc.Copy().
+			Given("value set and watcher added").
+			Then("should succeed but do not remove value").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Set("bar", 88)
+				w, err := c.V.AddWatcher()
+				if !assert.NoError(t, err) {
+					t.FailNow()
 				}
-				tc.Input.Watcher = w
-				tc.Input.Remover = func() {
-					tc.Input.Remover = nil
+				c.Input.Watcher = w
+				c.Input.Remover = func() {
+					c.Input.Remover = nil
 				}
-			},
-			Teardown: func(tc *TestCase) {
-				assert.NotNil(tc.t, tc.Input.Remover)
-			},
-			State: State{
-				V:       "bar",
-				Version: 88,
-			},
-		},
-	}
-	for i := range testCases {
-		tc := testCases[i]
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			t.Parallel()
-			t.Logf("\nGIVEN: %s\nWHEN: %s\nTHEN: %s", tc.Given, tc.When, tc.Then)
-			tc.t = t
-
-			var v Value
-			tc.v = &v
-
-			if f := tc.Setup; f != nil {
-				f(&tc)
-			}
-
-			err := v.RemoveWatcher(tc.Input.Watcher, tc.Input.Remover)
-
-			var output Output
-			output.Err = err
-			assert.Equal(t, tc.Output, output)
-
-			if f := tc.Teardown; f != nil {
-				f(&tc)
-			}
-
-			state := v.Inspect()
-			assert.Equal(t, tc.State, state)
-		})
-	}
+				c.ExpectedState.V = "bar"
+				c.ExpectedState.Version = 88
+			}).
+			PostRun(func(t *testing.T, c *Context) {
+				assert.NotNil(t, c.Input.Remover)
+			}),
+	})
 }
 
 func TestValue_CheckAndSet(t *testing.T) {
@@ -314,173 +218,125 @@ func TestValue_CheckAndSet(t *testing.T) {
 		Err error
 	}
 	type State = ValueDetails
-	type TestCase struct {
-		Given, When, Then string
-		Setup, Teardown   func(*TestCase)
-		Input             Input
-		Output            Output
-		State             State
+	type Context struct {
+		V Value
+		W Watcher
 
-		t *testing.T
-		v *Value
-		w Watcher
+		Input          Input
+		ExpectedOutput Output
+		ExpectedState  State
 	}
-	testCases := []TestCase{
-		{
-			Given: "value removed",
-			Then:  "should fail with error ErrValueRemoved",
-			Setup: func(tc *TestCase) {
-				tc.v.Remove()
-			},
-			Output: Output{
-				Err: ErrValueRemoved,
-			},
-			State: State{
-				IsRemoved: true,
-			},
-		},
-		{
-			When: "callback function failed",
-			Then: "should fail (1)",
-			Input: Input{
-				Callback: func(currentVersion Version) (string, Version, bool) {
+	tc := testcase.New(func(t *testing.T) *Context {
+		return &Context{}
+	}).Run(func(t *testing.T, c *Context) {
+		ok, err := c.V.CheckAndSet(c.Input.Callback)
+		var output Output
+		output.OK = ok
+		output.Err = err
+		assert.Equal(t, c.ExpectedOutput, output)
+		state := c.V.Inspect()
+		assert.Equal(t, c.ExpectedState, state)
+	})
+	testcase.RunListParallel(t, []testcase.TestCase{
+		tc.Copy().
+			Given("value removed").
+			Then("should fail with error ErrValueRemoved").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Remove()
+				c.ExpectedOutput.Err = ErrValueRemoved
+				c.ExpectedState.IsRemoved = true
+			}),
+		tc.Copy().
+			When("callback function failed").
+			Then("should fail (1)").
+			PreRun(func(t *testing.T, c *Context) {
+				c.Input.Callback = func(currentVersion Version) (string, Version, bool) {
 					if currentVersion == 0 {
 						return "", 0, false
 					}
 					return "foo", 99, true
-				},
-			},
-		},
-		{
-			Then: "should succeed (1)",
-			Setup: func(tc *TestCase) {
-				w, err := tc.v.AddWatcher()
-				if !assert.NoError(tc.t, err) {
-					tc.t.FailNow()
 				}
-				tc.w = w
-			},
-			Input: Input{
-				Callback: func(currentVersion Version) (string, Version, bool) {
+			}),
+		tc.Copy().
+			Then("should succeed (1)").
+			PreRun(func(t *testing.T, c *Context) {
+				w, err := c.V.AddWatcher()
+				if !assert.NoError(t, err) {
+					t.FailNow()
+				}
+				c.W = w
+				c.Input.Callback = func(currentVersion Version) (string, Version, bool) {
 					if currentVersion != 0 {
 						return "", 0, false
 					}
 					return "foo", 99, true
-				},
-			},
-			Output: Output{
-				OK: true,
-			},
-			Teardown: func(tc *TestCase) {
-				e := tc.w.Event()
+				}
+				c.ExpectedOutput.OK = true
+				c.ExpectedState.V = "foo"
+				c.ExpectedState.Version = 99
+			}).
+			PostRun(func(t *testing.T, c *Context) {
+				e := c.W.Event()
 				select {
 				case <-e:
 				default:
-					tc.t.Fail()
+					t.Fail()
 				}
 				ea := EventArgs{
 					Value:   "foo",
 					Version: 99,
 				}
-				assert.Equal(tc.t, ea, tc.w.EventArgs())
-
-			},
-			State: State{
-				V:       "foo",
-				Version: 99,
-			},
-		},
-		{
-			Given: "value set",
-			When:  "callback function failed",
-			Then:  "should fail (2)",
-			Setup: func(tc *TestCase) {
-				tc.v.Set("foo", 99)
-			},
-			Input: Input{
-				Callback: func(currentVersion Version) (string, Version, bool) {
+				assert.Equal(t, ea, c.W.EventArgs())
+			}),
+		tc.Copy().
+			Given("value set").
+			When("callback function failed").
+			Then("should fail (2)").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Set("foo", 99)
+				c.Input.Callback = func(currentVersion Version) (string, Version, bool) {
 					if currentVersion == 99 {
 						return "", 0, false
 					}
 					return "bar", 100, true
-				},
-			},
-			State: State{
-				V:       "foo",
-				Version: 99,
-			},
-		},
-		{
-			Given: "value set",
-			Then:  "should succeed (2)",
-			Setup: func(tc *TestCase) {
-				tc.v.Set("foo", 99)
-				w, err := tc.v.AddWatcher()
-				if !assert.NoError(tc.t, err) {
-					tc.t.FailNow()
 				}
-				tc.w = w
-			},
-			Input: Input{
-				Callback: func(currentVersion Version) (string, Version, bool) {
+				c.ExpectedState.V = "foo"
+				c.ExpectedState.Version = 99
+			}),
+		tc.Copy().
+			Given("value set").
+			Then("should succeed (2)").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Set("foo", 99)
+				w, err := c.V.AddWatcher()
+				if !assert.NoError(t, err) {
+					t.FailNow()
+				}
+				c.W = w
+				c.Input.Callback = func(currentVersion Version) (string, Version, bool) {
 					if currentVersion != 99 {
 						return "", 0, false
 					}
 					return "bar", 100, true
-				},
-			},
-			Output: Output{
-				OK: true,
-			},
-			Teardown: func(tc *TestCase) {
-				e := tc.w.Event()
+				}
+				c.ExpectedOutput.OK = true
+				c.ExpectedState.V = "bar"
+				c.ExpectedState.Version = 100
+			}).
+			PostRun(func(t *testing.T, c *Context) {
+				e := c.W.Event()
 				select {
 				case <-e:
 				default:
-					tc.t.Fail()
+					t.Fail()
 				}
 				ea := EventArgs{
 					Value:   "bar",
 					Version: 100,
 				}
-				assert.Equal(tc.t, ea, tc.w.EventArgs())
-
-			},
-			State: State{
-				V:       "bar",
-				Version: 100,
-			},
-		},
-	}
-	for i := range testCases {
-		tc := testCases[i]
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			t.Parallel()
-			t.Logf("\nGIVEN: %s\nWHEN: %s\nTHEN: %s", tc.Given, tc.When, tc.Then)
-			tc.t = t
-
-			var v Value
-			tc.v = &v
-
-			if f := tc.Setup; f != nil {
-				f(&tc)
-			}
-
-			ok, err := v.CheckAndSet(tc.Input.Callback)
-
-			var output Output
-			output.OK = ok
-			output.Err = err
-			assert.Equal(t, tc.Output, output)
-
-			if f := tc.Teardown; f != nil {
-				f(&tc)
-			}
-
-			state := v.Inspect()
-			assert.Equal(t, tc.State, state)
-		})
-	}
+				assert.Equal(t, ea, c.W.EventArgs())
+			}),
+	})
 }
 
 func TestValue_Clear(t *testing.T) {
@@ -493,140 +349,94 @@ func TestValue_Clear(t *testing.T) {
 		Err error
 	}
 	type State = ValueDetails
-	type TestCase struct {
-		Given, When, Then string
-		Setup, Teardown   func(*TestCase)
-		Input             Input
-		Output            Output
-		State             State
+	type Context struct {
+		V Value
+		W Watcher
 
-		t *testing.T
-		v *Value
-		w Watcher
+		Input          Input
+		ExpectedOutput Output
+		ExpectedState  State
 	}
-	testCases := []TestCase{
-		{
-			Given: "value removed",
-			Then:  "should fail with error ErrValueRemoved",
-			Setup: func(tc *TestCase) {
-				tc.v.Remove()
-			},
-			Output: Output{
-				Err: ErrValueRemoved,
-			},
-			State: State{
-				IsRemoved: true,
-			},
-		},
-		{
-			Given: "value not set",
-			Then:  "should fail",
-		},
-		{
-			Given: "value set",
-			When:  "given version is not equal to current version",
-			Then:  "should fail",
-			Setup: func(tc *TestCase) {
-				tc.v.Set("abc", 99)
-			},
+	tc := testcase.New(func(t *testing.T) *Context {
+		return &Context{
 			Input: Input{
-				Version: 100,
-			},
-			State: State{
-				V:       "abc",
-				Version: 99,
-			},
-		},
-		{
-			Given: "value set",
-			When:  "given version is equal to current version",
-			Then:  "should succeed",
-			Setup: func(tc *TestCase) {
-				tc.v.Set("abc", 100)
-			},
-			Input: Input{
-				Version: 100,
 				Remover: func() {},
 			},
-			Output: Output{
-				OK: true,
-			},
-			State: State{
-				IsRemoved: true,
-			},
-		},
-		{
-			Given: "value set and no watcher added",
-			Then:  "should succeed and remove value",
-			Setup: func(tc *TestCase) {
-				tc.v.Set("abc", 99)
-				tc.Input.Remover = func() {
-					tc.Input.Remover = nil
+		}
+	}).Run(func(t *testing.T, c *Context) {
+		ok, err := c.V.Clear(c.Input.Version, c.Input.Remover)
+		var output Output
+		output.OK = ok
+		output.Err = err
+		assert.Equal(t, c.ExpectedOutput, output)
+		state := c.V.Inspect()
+		assert.Equal(t, c.ExpectedState, state)
+	})
+	testcase.RunListParallel(t, []testcase.TestCase{
+		tc.Copy().
+			Given("value removed").
+			Then("should fail with error ErrValueRemoved").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Remove()
+				c.ExpectedOutput.Err = ErrValueRemoved
+				c.ExpectedState.IsRemoved = true
+			}),
+		tc.Copy().
+			Given("value not set").
+			Then("should fail"),
+		tc.Copy().
+			Given("value set").
+			When("given version is not equal to current version").
+			Then("should fail").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Set("abc", 99)
+				c.Input.Version = 100
+				c.ExpectedState.V = "abc"
+				c.ExpectedState.Version = 99
+			}),
+		tc.Copy().
+			Given("value set").
+			When("given version is equal to current version").
+			Then("should succeed").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Set("abc", 100)
+				c.Input.Version = 100
+				c.ExpectedOutput.OK = true
+				c.ExpectedState.IsRemoved = true
+			}),
+		tc.Copy().
+			Given("value set and no watcher added").
+			Then("should succeed and remove value").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Set("abc", 99)
+				c.Input.Remover = func() {
+					c.Input.Remover = nil
 				}
-			},
-			Output: Output{
-				OK: true,
-			},
-			Teardown: func(tc *TestCase) {
-				assert.Nil(tc.t, tc.Input.Remover)
-			},
-			State: State{
-				IsRemoved: true,
-			},
-		},
-		{
-			Given: "value set and watcher added",
-			Then:  "should succeed and do not remove value",
-			Setup: func(tc *TestCase) {
-				tc.v.Set("abc", 99)
-				tc.Input.Remover = func() {
-					tc.Input.Remover = nil
+				c.ExpectedOutput.OK = true
+				c.ExpectedState.IsRemoved = true
+			}).
+			PostRun(func(t *testing.T, c *Context) {
+				assert.Nil(t, c.Input.Remover)
+			}),
+		tc.Copy().
+			Given("value set and watcher added").
+			Then("should succeed and do not remove value").
+			PreRun(func(t *testing.T, c *Context) {
+				c.V.Set("abc", 99)
+				c.Input.Remover = func() {
+					c.Input.Remover = nil
 				}
-				_, err := tc.v.AddWatcher()
-				if !assert.NoError(tc.t, err) {
-					tc.t.FailNow()
+				_, err := c.V.AddWatcher()
+				if !assert.NoError(t, err) {
+					t.FailNow()
 				}
-			},
-			Output: Output{
-				OK: true,
-			},
-			Teardown: func(tc *TestCase) {
-				assert.NotNil(tc.t, tc.Input.Remover)
-			},
-			State: State{
-				NumberOfWatchers: 1,
-			},
-		},
-	}
-	for i := range testCases {
-		tc := testCases[i]
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			t.Parallel()
-			t.Logf("\nGIVEN: %s\nWHEN: %s\nTHEN: %s", tc.Given, tc.When, tc.Then)
-			tc.t = t
-
-			var v Value
-			tc.v = &v
-
-			if f := tc.Setup; f != nil {
-				f(&tc)
-			}
-
-			ok, err := v.Clear(tc.Input.Version, tc.Input.Remover)
-
-			var output Output
-			output.OK = ok
-			output.Err = err
-			assert.Equal(t, tc.Output, output)
-
-			if f := tc.Teardown; f != nil {
-				f(&tc)
-			}
-
-			state := v.Inspect()
-			assert.Equal(t, tc.State, state)
-		})
-	}
+				c.ExpectedOutput.OK = true
+				c.ExpectedState.NumberOfWatchers = 1
+			}).
+			PostRun(func(t *testing.T, c *Context) {
+				assert.NotNil(t, c.Input.Remover)
+			}),
+	})
 }
 
 func TestValue_NewValue(t *testing.T) {
