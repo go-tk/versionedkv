@@ -90,7 +90,10 @@ func doTestStorageGetValue(t *testing.T, sf StorageFactory) {
 		state := c.S.Inspect()
 		assert.Equal(t, c.ExpectedState, state)
 	}).Teardown(func(t *testing.T, c *Context) {
-		c.S.Close()
+		if c.ExpectedOutput.Err != ErrStorageClosed {
+			err := c.S.Close()
+			assert.NoError(t, err)
+		}
 	})
 	testcase.RunListParallel(t, []testcase.TestCase{
 		tc.Copy().
@@ -199,7 +202,10 @@ func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 		state := c.S.Inspect()
 		assert.Equal(t, c.ExpectedState, state)
 	}).Teardown(func(t *testing.T, c *Context) {
-		c.S.Close()
+		if c.ExpectedOutput.Err != ErrStorageClosed {
+			err := c.S.Close()
+			assert.NoError(t, err)
+		}
 	})
 	testcase.RunListParallel(t, []testcase.TestCase{
 		tc.Copy().
@@ -429,7 +435,10 @@ func doTestStorageCreateValue(t *testing.T, sf StorageFactory) {
 	}).Teardown(func(t *testing.T, c *Context) {
 		state := c.S.Inspect()
 		assert.Equal(t, c.ExpectedState, state)
-		c.S.Close()
+		if c.ExpectedOutput.Err != ErrStorageClosed {
+			err := c.S.Close()
+			assert.NoError(t, err)
+		}
 	})
 	testcase.RunListParallel(t, []testcase.TestCase{
 		tc.Copy().
@@ -524,7 +533,10 @@ func doTestStorageUpdateValue(t *testing.T, sf StorageFactory) {
 	}).Teardown(func(t *testing.T, c *Context) {
 		state := c.S.Inspect()
 		assert.Equal(t, c.ExpectedState, state)
-		c.S.Close()
+		if c.ExpectedOutput.Err != ErrStorageClosed {
+			err := c.S.Close()
+			assert.NoError(t, err)
+		}
 	})
 	testcase.RunListParallel(t, []testcase.TestCase{
 		tc.Copy().
@@ -671,7 +683,10 @@ func doTestStorageCreateOrUpdateValue(t *testing.T, sf StorageFactory) {
 	}).Teardown(func(t *testing.T, c *Context) {
 		state := c.S.Inspect()
 		assert.Equal(t, c.ExpectedState, state)
-		c.S.Close()
+		if c.ExpectedOutput.Err != ErrStorageClosed {
+			err := c.S.Close()
+			assert.NoError(t, err)
+		}
 	})
 	testcase.RunListParallel(t, []testcase.TestCase{
 		tc.Copy().
