@@ -11,7 +11,9 @@ import (
 )
 
 func TestMemoryStorage(t *testing.T) {
-	versionedkv.DoTestStorage(t, New)
+	versionedkv.DoTestStorage(t, func() (versionedkv.Storage, error) {
+		return New(), nil
+	})
 }
 
 func TestMemoryStorage_Close(t *testing.T) {

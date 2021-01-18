@@ -14,7 +14,7 @@ import (
 )
 
 // StorageFactory is the type of the function creating storages.
-type StorageFactory func() (storage Storage)
+type StorageFactory func() (storage Storage, err error)
 
 // DoTestStorage test storages created by the given storage factory.
 func DoTestStorage(t *testing.T, sf StorageFactory) {
@@ -77,7 +77,11 @@ func doTestStorageGetValue(t *testing.T, sf StorageFactory) {
 			},
 		}
 	}).Setup(func(t *testing.T, c *Context) {
-		c.S = sf()
+		s, err := sf()
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
+		c.S = s
 	}).Run(func(t *testing.T, c *Context) {
 		value, version, err := c.S.GetValue(c.Input.Ctx, c.Input.Key)
 		var output Output
@@ -189,7 +193,11 @@ func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 			},
 		}
 	}).Setup(func(t *testing.T, c *Context) {
-		c.S = sf()
+		s, err := sf()
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
+		c.S = s
 	}).Run(func(t *testing.T, c *Context) {
 		value, newVersion, err := c.S.WaitForValue(c.Input.Ctx, c.Input.Key, c.Input.OldVersion)
 		if wg := c.WG; wg != nil {
@@ -428,7 +436,11 @@ func doTestStorageCreateValue(t *testing.T, sf StorageFactory) {
 			},
 		}
 	}).Setup(func(t *testing.T, c *Context) {
-		c.S = sf()
+		s, err := sf()
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
+		c.S = s
 	}).Run(func(t *testing.T, c *Context) {
 		version, err := c.S.CreateValue(c.Input.Ctx, c.Input.Key, c.Input.Value)
 		c.OutputVersion = version
@@ -529,7 +541,11 @@ func doTestStorageUpdateValue(t *testing.T, sf StorageFactory) {
 			},
 		}
 	}).Setup(func(t *testing.T, c *Context) {
-		c.S = sf()
+		s, err := sf()
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
+		c.S = s
 	}).Run(func(t *testing.T, c *Context) {
 		version, err := c.S.UpdateValue(c.Input.Ctx, c.Input.Key, c.Input.Value, c.Input.OldVersion)
 		c.OutputNewVersion = version
@@ -682,7 +698,11 @@ func doTestStorageCreateOrUpdateValue(t *testing.T, sf StorageFactory) {
 			},
 		}
 	}).Setup(func(t *testing.T, c *Context) {
-		c.S = sf()
+		s, err := sf()
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
+		c.S = s
 	}).Run(func(t *testing.T, c *Context) {
 		version, err := c.S.CreateOrUpdateValue(c.Input.Ctx, c.Input.Key, c.Input.Value, c.Input.OldVersion)
 		c.OutputNewVersion = version
@@ -841,7 +861,11 @@ func doTestStorageDeleteValue(t *testing.T, sf StorageFactory) {
 			},
 		}
 	}).Setup(func(t *testing.T, c *Context) {
-		c.S = sf()
+		s, err := sf()
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
+		c.S = s
 	}).Run(func(t *testing.T, c *Context) {
 		ok, err := c.S.DeleteValue(c.Input.Ctx, c.Input.Key, c.Input.Version)
 		var output Output
@@ -939,8 +963,11 @@ func doTestStorageDeleteValue(t *testing.T, sf StorageFactory) {
 }
 
 func doTestStorageClose(t *testing.T, sf StorageFactory) {
-	s := sf()
-	err := s.Close()
+	s, err := sf()
+	if !assert.NoError(t, err) {
+		t.FailNow()
+	}
+	err = s.Close()
 	assert.NoError(t, err)
 	err = s.Close()
 	for err2 := errors.Unwrap(err); err2 != nil; err, err2 = err2, errors.Unwrap(err2) {
@@ -950,7 +977,10 @@ func doTestStorageClose(t *testing.T, sf StorageFactory) {
 
 func doTestStorageRaceCondition(t *testing.T, sf StorageFactory) {
 	const N = 10
-	s := sf()
+	s, err := sf()
+	if !assert.NoError(t, err) {
+		t.FailNow()
+	}
 	defer s.Close()
 	worker := func(key string) {
 		const (
