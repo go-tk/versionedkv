@@ -60,7 +60,7 @@ type Storage interface {
 	Close() (err error)
 
 	// Inspect returns detailed information for testing and debugging purposes.
-	Inspect() StorageDetails
+	Inspect(ctx context.Context) (details StorageDetails, err error)
 }
 
 // Version represents a specific version of a value in a storage.

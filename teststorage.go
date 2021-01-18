@@ -87,7 +87,10 @@ func doTestStorageGetValue(t *testing.T, sf StorageFactory) {
 		}
 		output.Err = err
 		assert.Equal(t, c.ExpectedOutput, output)
-		state := c.S.Inspect()
+		state, err := c.S.Inspect(context.Background())
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
 		assert.Equal(t, c.ExpectedState, state)
 	}).Teardown(func(t *testing.T, c *Context) {
 		if c.ExpectedOutput.Err != ErrStorageClosed {
@@ -199,7 +202,10 @@ func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 		}
 		output.Err = err
 		assert.Equal(t, c.ExpectedOutput, output)
-		state := c.S.Inspect()
+		state, err := c.S.Inspect(context.Background())
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
 		assert.Equal(t, c.ExpectedState, state)
 	}).Teardown(func(t *testing.T, c *Context) {
 		if c.ExpectedOutput.Err != ErrStorageClosed {
@@ -433,7 +439,10 @@ func doTestStorageCreateValue(t *testing.T, sf StorageFactory) {
 		output.Err = err
 		assert.Equal(t, c.ExpectedOutput, output)
 	}).Teardown(func(t *testing.T, c *Context) {
-		state := c.S.Inspect()
+		state, err := c.S.Inspect(context.Background())
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
 		assert.Equal(t, c.ExpectedState, state)
 		if c.ExpectedOutput.Err != ErrStorageClosed {
 			err := c.S.Close()
@@ -531,7 +540,10 @@ func doTestStorageUpdateValue(t *testing.T, sf StorageFactory) {
 		output.Err = err
 		assert.Equal(t, c.ExpectedOutput, output)
 	}).Teardown(func(t *testing.T, c *Context) {
-		state := c.S.Inspect()
+		state, err := c.S.Inspect(context.Background())
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
 		assert.Equal(t, c.ExpectedState, state)
 		if c.ExpectedOutput.Err != ErrStorageClosed {
 			err := c.S.Close()
@@ -681,7 +693,10 @@ func doTestStorageCreateOrUpdateValue(t *testing.T, sf StorageFactory) {
 		output.Err = err
 		assert.Equal(t, c.ExpectedOutput, output)
 	}).Teardown(func(t *testing.T, c *Context) {
-		state := c.S.Inspect()
+		state, err := c.S.Inspect(context.Background())
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
 		assert.Equal(t, c.ExpectedState, state)
 		if c.ExpectedOutput.Err != ErrStorageClosed {
 			err := c.S.Close()
@@ -835,7 +850,10 @@ func doTestStorageDeleteValue(t *testing.T, sf StorageFactory) {
 		}
 		output.Err = err
 		assert.Equal(t, c.ExpectedOutput, output)
-		state := c.S.Inspect()
+		state, err := c.S.Inspect(context.Background())
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
 		assert.Equal(t, c.ExpectedState, state)
 		c.S.Close()
 	})

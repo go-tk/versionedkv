@@ -258,11 +258,11 @@ func (ms *memoryStorage) Close() error {
 	return nil
 }
 
-func (ms *memoryStorage) Inspect() versionedkv.StorageDetails {
+func (ms *memoryStorage) Inspect(_ context.Context) (versionedkv.StorageDetails, error) {
 	if ms.isClosed() {
 		return versionedkv.StorageDetails{
 			IsClosed: true,
-		}
+		}, nil
 	}
 	var valueDetails map[string]versionedkv.ValueDetails
 	ms.values.Range(func(opaqueKey, opaqueValue interface{}) bool {
@@ -280,7 +280,7 @@ func (ms *memoryStorage) Inspect() versionedkv.StorageDetails {
 	})
 	return versionedkv.StorageDetails{
 		Values: valueDetails,
-	}
+	}, nil
 }
 
 func (ms *memoryStorage) isClosed() bool {
