@@ -33,7 +33,7 @@ func TestValue_Get(t *testing.T) {
 		state := c.V.Inspect()
 		assert.Equal(t, c.ExpectedState, state)
 	})
-	testcase.RunListParallel(t, []testcase.TestCase{
+	testcase.RunListParallel(t,
 		tc.Copy().
 			Given("value removed").
 			Then("should fail with error ErrValueRemoved").
@@ -55,7 +55,7 @@ func TestValue_Get(t *testing.T) {
 				c.ExpectedState.V = "foo"
 				c.ExpectedState.Version = 1
 			}),
-	})
+	)
 }
 
 func TestValue_AddWatcher(t *testing.T) {
@@ -79,7 +79,7 @@ func TestValue_AddWatcher(t *testing.T) {
 		state := c.V.Inspect()
 		assert.Equal(t, c.ExpectedState, state)
 	})
-	testcase.RunListParallel(t, []testcase.TestCase{
+	testcase.RunListParallel(t,
 		tc.Copy().
 			Given("value removed").
 			Then("should fail with error ErrValueRemoved").
@@ -93,7 +93,7 @@ func TestValue_AddWatcher(t *testing.T) {
 			PreRun(func(t *testing.T, c *Context) {
 				c.ExpectedState.NumberOfWatchers = 1
 			}),
-	})
+	)
 }
 
 func TestValue_RemoveWatcher(t *testing.T) {
@@ -126,7 +126,7 @@ func TestValue_RemoveWatcher(t *testing.T) {
 		state := c.V.Inspect()
 		assert.Equal(t, c.ExpectedState, state)
 	})
-	testcase.RunListParallel(t, []testcase.TestCase{
+	testcase.RunListParallel(t,
 		tc.Copy().
 			Given("value removed").
 			Then("should fail with error ErrValueRemoved").
@@ -206,7 +206,7 @@ func TestValue_RemoveWatcher(t *testing.T) {
 			PostRun(func(t *testing.T, c *Context) {
 				assert.NotNil(t, c.Input.Remover)
 			}),
-	})
+	)
 }
 
 func TestValue_CheckAndSet(t *testing.T) {
@@ -237,7 +237,7 @@ func TestValue_CheckAndSet(t *testing.T) {
 		state := c.V.Inspect()
 		assert.Equal(t, c.ExpectedState, state)
 	})
-	testcase.RunListParallel(t, []testcase.TestCase{
+	testcase.RunListParallel(t,
 		tc.Copy().
 			Given("value removed").
 			Then("should fail with error ErrValueRemoved").
@@ -336,7 +336,7 @@ func TestValue_CheckAndSet(t *testing.T) {
 				}
 				assert.Equal(t, ea, c.W.EventArgs())
 			}),
-	})
+	)
 }
 
 func TestValue_Clear(t *testing.T) {
@@ -372,7 +372,7 @@ func TestValue_Clear(t *testing.T) {
 		state := c.V.Inspect()
 		assert.Equal(t, c.ExpectedState, state)
 	})
-	testcase.RunListParallel(t, []testcase.TestCase{
+	testcase.RunListParallel(t,
 		tc.Copy().
 			Given("value removed").
 			Then("should fail with error ErrValueRemoved").
@@ -436,7 +436,7 @@ func TestValue_Clear(t *testing.T) {
 			PostRun(func(t *testing.T, c *Context) {
 				assert.NotNil(t, c.Input.Remover)
 			}),
-	})
+	)
 }
 
 func TestValue_NewValue(t *testing.T) {

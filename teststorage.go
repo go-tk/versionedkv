@@ -102,7 +102,7 @@ func doTestStorageGetValue(t *testing.T, sf StorageFactory) {
 			assert.NoError(t, err)
 		}
 	})
-	testcase.RunListParallel(t, []testcase.TestCase{
+	testcase.RunListParallel(t,
 		tc.Copy().
 			Given("storage closed").
 			Then("should fail with error ErrStorageClosed").
@@ -163,7 +163,7 @@ func doTestStorageGetValue(t *testing.T, sf StorageFactory) {
 					},
 				}
 			}),
-	})
+	)
 }
 
 func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
@@ -221,7 +221,7 @@ func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 			assert.NoError(t, err)
 		}
 	})
-	testcase.RunListParallel(t, []testcase.TestCase{
+	testcase.RunListParallel(t,
 		tc.Copy().
 			Given("storage closed").
 			Then("should fail with error ErrStorageClosed").
@@ -407,7 +407,7 @@ func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 				c.Input.Key = "foo"
 				c.ExpectedOutput.Err = context.DeadlineExceeded
 			}),
-	})
+	)
 }
 
 func doTestStorageCreateValue(t *testing.T, sf StorageFactory) {
@@ -461,7 +461,7 @@ func doTestStorageCreateValue(t *testing.T, sf StorageFactory) {
 			assert.NoError(t, err)
 		}
 	})
-	testcase.RunListParallel(t, []testcase.TestCase{
+	testcase.RunListParallel(t,
 		tc.Copy().
 			Given("storage closed").
 			Then("should fail with error ErrStorageClosed").
@@ -510,7 +510,7 @@ func doTestStorageCreateValue(t *testing.T, sf StorageFactory) {
 					},
 				}
 			}),
-	})
+	)
 }
 
 func doTestStorageUpdateValue(t *testing.T, sf StorageFactory) {
@@ -566,7 +566,7 @@ func doTestStorageUpdateValue(t *testing.T, sf StorageFactory) {
 			assert.NoError(t, err)
 		}
 	})
-	testcase.RunListParallel(t, []testcase.TestCase{
+	testcase.RunListParallel(t,
 		tc.Copy().
 			Given("storage closed").
 			Then("should fail with error ErrStorageClosed").
@@ -667,7 +667,7 @@ func doTestStorageUpdateValue(t *testing.T, sf StorageFactory) {
 					},
 				}
 			}),
-	})
+	)
 }
 
 func doTestStorageCreateOrUpdateValue(t *testing.T, sf StorageFactory) {
@@ -723,7 +723,7 @@ func doTestStorageCreateOrUpdateValue(t *testing.T, sf StorageFactory) {
 			assert.NoError(t, err)
 		}
 	})
-	testcase.RunListParallel(t, []testcase.TestCase{
+	testcase.RunListParallel(t,
 		tc.Copy().
 			Given("storage closed").
 			Then("should fail with error ErrStorageClosed").
@@ -833,7 +833,7 @@ func doTestStorageCreateOrUpdateValue(t *testing.T, sf StorageFactory) {
 					},
 				}
 			}),
-	})
+	)
 }
 
 func doTestStorageDeleteValue(t *testing.T, sf StorageFactory) {
@@ -881,7 +881,7 @@ func doTestStorageDeleteValue(t *testing.T, sf StorageFactory) {
 		assert.Equal(t, c.ExpectedState, state)
 		c.S.Close()
 	})
-	testcase.RunListParallel(t, []testcase.TestCase{
+	testcase.RunListParallel(t,
 		tc.Copy().
 			Given("storage closed").
 			Then("should fail with error ErrStorageClosed").
@@ -959,7 +959,7 @@ func doTestStorageDeleteValue(t *testing.T, sf StorageFactory) {
 					},
 				}
 			}),
-	})
+	)
 }
 
 func doTestStorageClose(t *testing.T, sf StorageFactory) {
