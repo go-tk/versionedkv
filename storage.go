@@ -12,13 +12,16 @@ type Storage interface {
 	// If the value does not exist, a nil version is returned.
 	GetValue(ctx context.Context, key string) (value string, version Version, err error)
 
-	// WaitForValue waits for the creation or update of the value for the given key.
+	// WaitForValue waits for the creation, update, deletion of the value for the given key.
 	//
-	// a) If the value does not exist, it blocks until the value has been created;
-	// b) If the value exists and the old-version is given and the current version of
+	// a) If the value does not exist and the old-version is not given, it blocks until
+	// the value has been created;
+	// b) If the value does not exist and the old-version is given, a nil new-version
+	// is returned right away.
+	// c) If the value exists and the old-version is given and the current version of
 	// the value is equal to the old-version, it blocks until the value has been
-	// updated or recreated to a new version;
-	// c) Otherwise the value is returned right away.
+	// updated to a new version or deleted (a nil new-version is returned);
+	// d) Otherwise the value is returned right away.
 	WaitForValue(ctx context.Context, key string, oldVersion Version) (value string, newVersion Version, err error)
 
 	// Create creates the value for the given key.

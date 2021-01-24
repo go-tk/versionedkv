@@ -84,7 +84,7 @@ func (ms *memoryStorage) doWaitForValue(ctx context.Context, key string,
 			value.RemoveWatcher(watcher, func() { ms.values.Delete(key) })
 		}
 	}()
-	if version != 0 && (oldVersion == 0 || version != oldVersion) {
+	if version != oldVersion {
 		return val, version, nil
 	}
 	select {

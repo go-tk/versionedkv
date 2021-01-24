@@ -84,11 +84,11 @@ func (v *Value) CheckAndSet(callback func(Version) (string, Version, bool)) (boo
 	v.watchers = nil
 	mu.Unlock()
 	mu = nil
+	eventArgs := EventArgs{
+		Value:   vv,
+		Version: version,
+	}
 	for watcher := range watchers {
-		eventArgs := EventArgs{
-			Value:   vv,
-			Version: version,
-		}
 		watcher.FireEvent(eventArgs)
 	}
 	return true, nil
@@ -103,8 +103,13 @@ func (v *Value) set(vv string, version Version) {
 }
 
 func (v *Value) Clear(version Version, remover ValueRemover) (bool, error) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
+	mu := &v.mu
+	mu.Lock()
+	defer func() {
+		if mu != nil {
+			mu.Unlock()
+		}
+	}()
 	if v.isRemoved {
 		return false, ErrValueRemoved
 	}
@@ -116,8 +121,14 @@ func (v *Value) Clear(version Version, remover ValueRemover) (bool, error) {
 	}
 	v.v = ""
 	v.version = 0
-	if v.watchers == nil {
-		v.remove(remover)
+	watchers := v.watchers
+	v.watchers = nil
+	v.remove(remover)
+	mu.Unlock()
+	mu = nil
+	var eventArgs EventArgs
+	for watcher := range watchers {
+		watcher.FireEvent(eventArgs)
 	}
 	return true, nil
 }

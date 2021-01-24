@@ -269,6 +269,27 @@ func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 				})
 			}),
 		tc.Copy().
+			When("value for given key does not exist and old-version is given").
+			Then("should return nil-version").
+			PreRun(func(t *testing.T, c *Context) {
+				version, err := c.S.CreateValue(context.Background(), "foo", "123")
+				if !assert.NoError(t, err) {
+					t.FailNow()
+				}
+				if !assert.NotNil(t, version) {
+					t.FailNow()
+				}
+				ok, err := c.S.DeleteValue(context.Background(), "foo", version)
+				if !assert.NoError(t, err) {
+					t.FailNow()
+				}
+				if !assert.True(t, ok) {
+					t.FailNow()
+				}
+				c.Input.Key = "foo"
+				c.Input.OldVersion = version
+			}),
+		tc.Copy().
 			Given("storage with value").
 			When("value for given key exists and given old-version is equal to current version of value").
 			Then("should block until value has been updated").
@@ -307,7 +328,7 @@ func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 		tc.Copy().
 			Given("storage with value").
 			When("value for given key exists and given old-version is equal to current version of value").
-			Then("should block until value has been recreated").
+			Then("should block until value has been deleted").
 			PreRun(func(t *testing.T, c *Context) {
 				version, err := c.S.CreateValue(context.Background(), "foo", "123")
 				if !assert.NoError(t, err) {
@@ -329,21 +350,6 @@ func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 					}
 					if !assert.True(t, ok) {
 						return
-					}
-					version, err = c.S.CreateOrUpdateValue(context.Background(), "foo", "123abc", nil)
-					if !assert.NoError(t, err) {
-						return
-					}
-					if !assert.NotNil(t, version) {
-						return
-					}
-					c.ExpectedOutput.Value = "123abc"
-					c.ExpectedOutput.NewVersion = version
-					c.ExpectedState.Values = map[string]ValueDetails{
-						"foo": {
-							V:       "123abc",
-							Version: version,
-						},
 					}
 				})
 			}),

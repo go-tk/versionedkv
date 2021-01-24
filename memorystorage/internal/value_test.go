@@ -280,7 +280,7 @@ func TestValue_CheckAndSet(t *testing.T) {
 				select {
 				case <-e:
 				default:
-					t.Fail()
+					t.Fatal("event not fired")
 				}
 				ea := EventArgs{
 					Value:   "foo",
@@ -328,7 +328,7 @@ func TestValue_CheckAndSet(t *testing.T) {
 				select {
 				case <-e:
 				default:
-					t.Fail()
+					t.Fatal("event not fired")
 				}
 				ea := EventArgs{
 					Value:   "bar",
@@ -420,21 +420,30 @@ func TestValue_Clear(t *testing.T) {
 			}),
 		tc.Copy().
 			Given("value set and watcher added").
-			Then("should succeed and do not remove value").
+			Then("should succeed and remove value").
 			PreRun(func(t *testing.T, c *Context) {
 				c.V.Set("abc", 99)
-				c.Input.Remover = func() {
-					c.Input.Remover = nil
-				}
-				_, err := c.V.AddWatcher()
+				w, err := c.V.AddWatcher()
 				if !assert.NoError(t, err) {
 					t.FailNow()
 				}
+				c.W = w
+				c.Input.Remover = func() {
+					c.Input.Remover = nil
+				}
 				c.ExpectedOutput.OK = true
-				c.ExpectedState.NumberOfWatchers = 1
+				c.ExpectedState.IsRemoved = true
 			}).
 			PostRun(func(t *testing.T, c *Context) {
-				assert.NotNil(t, c.Input.Remover)
+				e := c.W.Event()
+				select {
+				case <-e:
+				default:
+					t.Fatal("event not fired")
+				}
+				var ea EventArgs
+				assert.Equal(t, ea, c.W.EventArgs())
+				assert.Nil(t, c.Input.Remover)
 			}),
 	)
 }
