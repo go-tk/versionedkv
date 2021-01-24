@@ -280,13 +280,8 @@ func TestValue_CheckAndSet(t *testing.T) {
 				select {
 				case <-e:
 				default:
-					t.Fatal("event not fired")
+					t.Error("event not fired")
 				}
-				ea := EventArgs{
-					Value:   "foo",
-					Version: 99,
-				}
-				assert.Equal(t, ea, c.W.EventArgs())
 			}),
 		tc.Copy().
 			Given("value set").
@@ -328,13 +323,8 @@ func TestValue_CheckAndSet(t *testing.T) {
 				select {
 				case <-e:
 				default:
-					t.Fatal("event not fired")
+					t.Error("event not fired")
 				}
-				ea := EventArgs{
-					Value:   "bar",
-					Version: 100,
-				}
-				assert.Equal(t, ea, c.W.EventArgs())
 			}),
 	)
 }
@@ -439,10 +429,8 @@ func TestValue_Clear(t *testing.T) {
 				select {
 				case <-e:
 				default:
-					t.Fatal("event not fired")
+					t.Error("event not fired")
 				}
-				var ea EventArgs
-				assert.Equal(t, ea, c.W.EventArgs())
 				assert.Nil(t, c.Input.Remover)
 			}),
 	)

@@ -63,40 +63,52 @@ func (ms *memoryStorage) WaitForValue(ctx context.Context, key string,
 
 func (ms *memoryStorage) doWaitForValue(ctx context.Context, key string,
 	oldVersion internal.Version) (string, internal.Version, error) {
-	if ms.isClosed() {
-		return "", 0, versionedkv.ErrStorageClosed
-	}
-	opaqueValue, ok := ms.values.Load(key)
-	if !ok {
-		opaqueValue, _ = ms.values.LoadOrStore(key, &internal.Value{})
-	}
-	value := opaqueValue.(*internal.Value)
-	watcher, err := value.AddWatcher()
-	if err != nil {
-		return "", 0, err
-	}
-	val, version, err := value.Get()
-	if err != nil {
-		return "", 0, err
-	}
-	defer func() {
-		if watcher != (internal.Watcher{}) {
-			value.RemoveWatcher(watcher, func() { ms.values.Delete(key) })
+	for {
+		var retry bool
+		val, newVersion, err := func() (string, internal.Version, error) {
+			if ms.isClosed() {
+				return "", 0, versionedkv.ErrStorageClosed
+			}
+			opaqueValue, ok := ms.values.Load(key)
+			if !ok {
+				opaqueValue, _ = ms.values.LoadOrStore(key, &internal.Value{})
+			}
+			value := opaqueValue.(*internal.Value)
+			watcher, err := value.AddWatcher()
+			if err != nil {
+				return "", 0, err
+			}
+			defer func() {
+				if watcher != (internal.Watcher{}) {
+					value.RemoveWatcher(watcher, func() { ms.values.Delete(key) })
+				}
+			}()
+			val, newVersion, err := value.Get()
+			if err != nil {
+				return "", 0, err
+			}
+			retry = newVersion == oldVersion
+			if retry {
+				select {
+				case <-watcher.Event():
+					watcher = internal.Watcher{}
+					return "", 0, nil
+				case <-ms.closure:
+					watcher = internal.Watcher{}
+					return "", 0, versionedkv.ErrStorageClosed
+				case <-ctx.Done():
+					return "", 0, ctx.Err()
+				}
+			}
+			return val, newVersion, nil
+		}()
+		if err != nil {
+			return "", 0, err
 		}
-	}()
-	if version != oldVersion {
-		return val, version, nil
-	}
-	select {
-	case <-watcher.Event():
-		eventArgs := watcher.EventArgs()
-		watcher = internal.Watcher{}
-		return eventArgs.Value, eventArgs.Version, nil
-	case <-ms.closure:
-		watcher = internal.Watcher{}
-		return "", 0, versionedkv.ErrStorageClosed
-	case <-ctx.Done():
-		return "", 0, ctx.Err()
+		if retry {
+			continue
+		}
+		return val, newVersion, nil
 	}
 }
 

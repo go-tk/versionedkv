@@ -84,12 +84,8 @@ func (v *Value) CheckAndSet(callback func(Version) (string, Version, bool)) (boo
 	v.watchers = nil
 	mu.Unlock()
 	mu = nil
-	eventArgs := EventArgs{
-		Value:   vv,
-		Version: version,
-	}
 	for watcher := range watchers {
-		watcher.FireEvent(eventArgs)
+		watcher.FireEvent()
 	}
 	return true, nil
 }
@@ -126,9 +122,8 @@ func (v *Value) Clear(version Version, remover ValueRemover) (bool, error) {
 	v.remove(remover)
 	mu.Unlock()
 	mu = nil
-	var eventArgs EventArgs
 	for watcher := range watchers {
-		watcher.FireEvent(eventArgs)
+		watcher.FireEvent()
 	}
 	return true, nil
 }
@@ -143,20 +138,13 @@ type Version uint64
 type Watcher struct{ w *watcher }
 
 func (w Watcher) Event() <-chan struct{} { return w.w.Event() }
-func (w Watcher) EventArgs() EventArgs   { return w.w.EventArgs() }
-
-type EventArgs struct {
-	Value   string
-	Version Version
-}
 
 type ValueRemover func()
 
 var ErrValueRemoved error = errors.New("internal: value removed")
 
 type watcher struct {
-	event     chan struct{}
-	eventArgs EventArgs
+	event chan struct{}
 }
 
 func (w *watcher) Init() *watcher {
@@ -164,15 +152,10 @@ func (w *watcher) Init() *watcher {
 	return w
 }
 
-func (w *watcher) FireEvent(eventArgs EventArgs) {
-	w.eventArgs = eventArgs
+func (w *watcher) FireEvent() {
 	close(w.event)
 }
 
 func (w *watcher) Event() <-chan struct{} {
 	return w.event
-}
-
-func (w *watcher) EventArgs() EventArgs {
-	return w.eventArgs
 }
