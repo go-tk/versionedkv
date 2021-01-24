@@ -187,9 +187,11 @@ func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 		ExpectedState  State
 	}
 	tc := testcase.New(func(t *testing.T) *Context {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		_ = cancel
 		return &Context{
 			Input: Input{
-				Ctx: context.Background(),
+				Ctx: ctx,
 			},
 		}
 	}).Setup(func(t *testing.T, c *Context) {
@@ -376,7 +378,7 @@ func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 			}),
 		tc.Copy().
 			Given("storage with value").
-			Then("should return corresponding value and Version (2)").
+			Then("should return corresponding value and version (2)").
 			PreRun(func(t *testing.T, c *Context) {
 				oldVersion, err := c.S.CreateValue(context.Background(), "foo", "123")
 				if !assert.NoError(t, err) {

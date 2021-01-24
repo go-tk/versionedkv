@@ -224,9 +224,9 @@ func (ms *memoryStorage) doCreateOrUpdateValue(key, val string, oldVersion inter
 }
 
 func (ms *memoryStorage) DeleteValue(_ context.Context, key string, opaqueVersion versionedkv.Version) (bool, error) {
-	oldVersion := opaqueVersion2Version(opaqueVersion)
+	version := opaqueVersion2Version(opaqueVersion)
 	for {
-		ok, err := ms.doDeleteValue(key, oldVersion)
+		ok, err := ms.doDeleteValue(key, version)
 		if err == internal.ErrValueRemoved {
 			continue
 		}
