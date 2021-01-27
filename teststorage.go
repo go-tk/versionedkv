@@ -16,43 +16,44 @@ import (
 // StorageFactory is the type of the function creating storages.
 type StorageFactory func() (storage Storage, err error)
 
-// DoTestStorage test storages created by the given storage factory.
+// DoTestStorage tests storages created by the given storage factory.
 func DoTestStorage(t *testing.T, sf StorageFactory) {
 	t.Run("GetValue", func(t *testing.T) {
 		t.Parallel()
-		doTestStorageGetValue(t, sf)
+		DoTestStorageGetValue(t, sf)
 	})
 	t.Run("WaitForValue", func(t *testing.T) {
 		t.Parallel()
-		doTestStorageWaitForValue(t, sf)
+		DoTestStorageWaitForValue(t, sf)
 	})
 	t.Run("CreateValue", func(t *testing.T) {
 		t.Parallel()
-		doTestStorageCreateValue(t, sf)
+		DoTestStorageCreateValue(t, sf)
 	})
 	t.Run("UpdateValue", func(t *testing.T) {
 		t.Parallel()
-		doTestStorageUpdateValue(t, sf)
+		DoTestStorageUpdateValue(t, sf)
 	})
 	t.Run("CreateOrUpdateValue", func(t *testing.T) {
 		t.Parallel()
-		doTestStorageCreateOrUpdateValue(t, sf)
+		DoTestStorageCreateOrUpdateValue(t, sf)
 	})
 	t.Run("DeleteValue", func(t *testing.T) {
 		t.Parallel()
-		doTestStorageDeleteValue(t, sf)
+		DoTestStorageDeleteValue(t, sf)
 	})
 	t.Run("Close", func(t *testing.T) {
 		t.Parallel()
-		doTestStorageClose(t, sf)
+		DoTestStorageClose(t, sf)
 	})
 	t.Run("RaceCondition", func(t *testing.T) {
 		t.Parallel()
-		doTestStorageRaceCondition(t, sf)
+		DoTestStorageRaceCondition(t, sf)
 	})
 }
 
-func doTestStorageGetValue(t *testing.T, sf StorageFactory) {
+// DoTestStorageGetValue tests storages created by the given storage factory.
+func DoTestStorageGetValue(t *testing.T, sf StorageFactory) {
 	type Input struct {
 		Ctx context.Context
 		Key string
@@ -166,7 +167,8 @@ func doTestStorageGetValue(t *testing.T, sf StorageFactory) {
 	)
 }
 
-func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
+// DoTestStorageWaitForValue tests storages created by the given storage factory.
+func DoTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 	type Input struct {
 		Ctx        context.Context
 		Key        string
@@ -418,7 +420,8 @@ func doTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 	)
 }
 
-func doTestStorageCreateValue(t *testing.T, sf StorageFactory) {
+// DoTestStorageCreateValue tests storages created by the given storage factory.
+func DoTestStorageCreateValue(t *testing.T, sf StorageFactory) {
 	type Input struct {
 		Ctx   context.Context
 		Key   string
@@ -521,7 +524,8 @@ func doTestStorageCreateValue(t *testing.T, sf StorageFactory) {
 	)
 }
 
-func doTestStorageUpdateValue(t *testing.T, sf StorageFactory) {
+// DoTestStorageUpdateValue tests storages created by the given storage factory.
+func DoTestStorageUpdateValue(t *testing.T, sf StorageFactory) {
 	type Input struct {
 		Ctx        context.Context
 		Key        string
@@ -678,7 +682,8 @@ func doTestStorageUpdateValue(t *testing.T, sf StorageFactory) {
 	)
 }
 
-func doTestStorageCreateOrUpdateValue(t *testing.T, sf StorageFactory) {
+// DoTestStorageCreateOrUpdateValue tests storages created by the given storage factory.
+func DoTestStorageCreateOrUpdateValue(t *testing.T, sf StorageFactory) {
 	type Input struct {
 		Ctx        context.Context
 		Key        string
@@ -844,7 +849,8 @@ func doTestStorageCreateOrUpdateValue(t *testing.T, sf StorageFactory) {
 	)
 }
 
-func doTestStorageDeleteValue(t *testing.T, sf StorageFactory) {
+// DoTestStorageDeleteValue tests storages created by the given storage factory.
+func DoTestStorageDeleteValue(t *testing.T, sf StorageFactory) {
 	type Input struct {
 		Ctx     context.Context
 		Key     string
@@ -970,7 +976,8 @@ func doTestStorageDeleteValue(t *testing.T, sf StorageFactory) {
 	)
 }
 
-func doTestStorageClose(t *testing.T, sf StorageFactory) {
+// DoTestStorageClose tests storages created by the given storage factory.
+func DoTestStorageClose(t *testing.T, sf StorageFactory) {
 	s, err := sf()
 	if !assert.NoError(t, err) {
 		t.FailNow()
@@ -983,7 +990,8 @@ func doTestStorageClose(t *testing.T, sf StorageFactory) {
 	assert.Equal(t, ErrStorageClosed, err)
 }
 
-func doTestStorageRaceCondition(t *testing.T, sf StorageFactory) {
+// DoTestStorageRaceCondition tests storages created by the given storage factory.
+func DoTestStorageRaceCondition(t *testing.T, sf StorageFactory) {
 	const N = 10
 	s, err := sf()
 	if !assert.NoError(t, err) {
@@ -1039,7 +1047,7 @@ func doTestStorageRaceCondition(t *testing.T, sf StorageFactory) {
 					}
 				}
 			case actionWaitForValue:
-				d := time.Duration(100+rand.Intn(101)) * time.Millisecond
+				d := time.Duration(500+rand.Intn(501)) * time.Millisecond
 				ctx, cancel := context.WithTimeout(context.Background(), d)
 				_ = cancel
 				var err error
