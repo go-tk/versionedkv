@@ -1,3 +1,4 @@
+// Package memorystorage provides the implementation of versionedkv in memory.
 package memorystorage
 
 import (
