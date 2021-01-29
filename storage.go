@@ -32,28 +32,28 @@ type Storage interface {
 
 	// Update updates the value for the given key.
 	//
-	// a) If the value exists and no old-version is given, it updates the value to a new
-	// version as the given value;
+	// a) If the value exists and the old-version is not given, it updates the value to
+	// a new version as the given value;
 	// b) If the value exists and the old-version is given and the current version of the
 	// value is equal to the old-version, it updates the value to a new version as the
-	// given version;
+	// given value;
 	// c) Otherwise a nil new-version is returned.
 	UpdateValue(ctx context.Context, key, value string, oldVersion Version) (newVersion Version, err error)
 
 	// CreateOrUpdateValue performs CreateValue or UpdateValue as an atomic operation.
 	//
 	// a) If the value does not exist, it creates the value as the given value;
-	// b) If the value exists and no old-version is given, it updates the value to a new
-	// version as the given value;
+	// b) If the value exists and the old-version is not given, it updates the value to
+	// a new version as the given value;
 	// c) If the value exists and the old-version is given and the current version of the
 	// value is equal to the old-version, it updates the value to a new version as the
-	// given version;
+	// given value;
 	// d) Otherwise a nil new-version is returned.
 	CreateOrUpdateValue(ctx context.Context, key, value string, oldVersion Version) (newVersion Version, err error)
 
 	// DeleteValue deletes the value for the given key.
 	//
-	// a) If the value exists and no version is given, it deletes the value;
+	// a) If the value exists and the version is not given, it deletes the value;
 	// b) If the value exists and the version is given and the current version of the
 	// value is equal to the version, it deletes the value;
 	// c) Otherwise false is returned.
