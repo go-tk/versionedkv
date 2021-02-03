@@ -408,14 +408,24 @@ func DoTestStorageWaitForValue(t *testing.T, sf StorageFactory) {
 				}
 			}),
 		tc.Copy().
-			Given("ctx timed out").
-			Then("should fail with error DeadlineExceeded").
+			When("ctx is canceled").
+			Then("should fail with error Canceled").
 			PreRun(func(t *testing.T, c *Context) {
-				ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+				ctx, cancel := context.WithCancel(context.Background())
+				time.AfterFunc(200*time.Millisecond, cancel)
 				_ = cancel
 				c.Input.Ctx = ctx
 				c.Input.Key = "foo"
-				c.ExpectedOutput.Err = context.DeadlineExceeded
+				c.ExpectedOutput.Err = context.Canceled
+			}),
+		tc.Copy().
+			When("storage is closed").
+			Then("should fail with error ErrStorageClosed").
+			PreRun(func(t *testing.T, c *Context) {
+				time.AfterFunc(200*time.Millisecond, func() { c.S.Close() })
+				c.Input.Key = "foo"
+				c.ExpectedOutput.Err = ErrStorageClosed
+				c.ExpectedState.IsClosed = true
 			}),
 	)
 }
